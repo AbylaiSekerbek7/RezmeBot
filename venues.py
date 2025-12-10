@@ -7,43 +7,98 @@ VENUES_FILE = "venues.json"
 
 # стартовый набор заведений (если файла ещё нет)
 DEFAULT_VENUES: List[Dict] = [
-    {
-        "id": 1,
-        "category": "Кафе/Рестораны",
-        "district": "Центр",
-        "name": "Cafe Central",
-        "address": "ул. Абая 10",
-        "phone": "+7 777 123 45 67",
-        "instagram": "https://instagram.com/cafecentral",
-    },
-    {
-        "id": 2,
-        "category": "Кафе/Рестораны",
-        "district": "Левый берег",
-        "name": "Sky Lounge",
-        "address": "пр. Назарбаева 15",
-        "phone": "+7 707 111 22 33",
-        "instagram": "",
-    },
-    {
-        "id": 3,
-        "category": "Караоке",
-        "district": "Центр",
-        "name": "Karaoke Night",
-        "address": "ул. Сатпаева 5",
-        "phone": "+7 705 555 66 77",
-        "instagram": "https://instagram.com/karaokenight",
-    },
-    {
-        "id": 4,
-        "category": "Боулинг",
-        "district": "Правый берег",
-        "name": "Strike Bowling",
-        "address": "ТРЦ Mega, 3 этаж",
-        "phone": "+7 700 999 88 77",
-        "instagram": "",
-    },
+  {
+    "id": 1,
+    "name": "Hungry Rabbit",
+    "category": "Ресторан, бар, боулинг, караоке",
+    "district": "Правый берег",
+    "address": "ул. Сакена Сейфулина 38",
+    "phone": "+77019713777",
+    "instagram": "https://www.instagram.com/hungryrabbit_jimmy?igsh=MTZndHdxeWZ3ZnFyeQ=="
+  },
+  {
+    "id": 2,
+    "name": "Jimmy",
+    "category": "Караоке",
+    "district": "Правый берег",
+    "address": "ул. Сакена Сейфулина 38",
+    "phone": "+77015222238",
+    "instagram": ""
+  },
+  {
+    "id": 3,
+    "name": "Pasta La Vista",
+    "category": "Кафе",
+    "district": "Левый берег",
+    "address": "ул. Акмешит 1",
+    "phone": "+77776965696",
+    "instagram": "https://www.instagram.com/pastalavista_astana?igsh=MTd0YTl5ZzIwZjBsNA=="
+  },
+  {
+    "id": 4,
+    "name": "Lou Lou",
+    "category": "Ресторан",
+    "district": "Центр",
+    "address": "ул. Достык 13",
+    "phone": "+77778081888",
+    "instagram": "https://www.instagram.com/loulou_astana?igsh=MTR2Z2IzYmdzb2h6ZA=="
+  },
+  {
+    "id": 5,
+    "name": "Panno",
+    "category": "Ресторан",
+    "district": "Центр",
+    "address": "ул. Достык 13",
+    "phone": "+77079526090",
+    "instagram": "https://www.instagram.com/panno.astana?igsh=MjJ2dzZ4aHB0eWg4"
+  },
+  {
+    "id": 6,
+    "name": "Underground",
+    "category": "Play station клуб",
+    "district": "Левый берег",
+    "address": "ул. Санжара Асфендиярова 8",
+    "phone": "+77084255099",
+    "instagram": "https://www.instagram.com/underground_astana?igsh=MWRkNWl0Nmxocjd5Ng=="
+  },
+  {
+    "id": 7,
+    "name": "NextGen",
+    "category": "Компьютерный клуб",
+    "district": "Левый берег",
+    "address": "ул. Бектуров 4",
+    "phone": "+77476455620",
+    "instagram": "https://www.instagram.com/nextgen.kz?igsh=MWZtcHdlcHdvMDN2eQ=="
+  },
+  {
+    "id": 8,
+    "name": "Sky",
+    "category": "Лаундж-Бар",
+    "district": "Центр",
+    "address": "ул. Сыганак 45",
+    "phone": "+77012021313",
+    "instagram": "https://www.instagram.com/myata.sky?igsh=cGJlcHQ0c2F0bGNh"
+  },
+  {
+    "id": 9,
+    "name": "Pingwin Premium",
+    "category": "Ресто-бар, караоке, боулинг",
+    "district": "Правый берег",
+    "address": "ул. Е 565, 3",
+    "phone": "+77007205544",
+    "instagram": "https://www.instagram.com/pingwin_premium?igsh=dmp3ZzFuNDM2c3Qz"
+  },
+  {
+    "id": 10,
+    "name": "Oblako",
+    "category": "Лаундж-Бар",
+    "district": "Центр",
+    "address": "ул. Конаева 33",
+    "phone": "+77761113663",
+    "instagram": "https://www.instagram.com/oblako.astana?igsh=aTN3dWJnanhjYmdw"
+  }
 ]
+
 
 
 def _save_venues(venues: List[Dict]) -> None:
