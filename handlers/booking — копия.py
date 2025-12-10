@@ -15,7 +15,7 @@ from db import (
     upsert_user,
 )
 from venues import (
-    get_venues_by_category,  # можно оставить, даже если сейчас не используем
+    get_venues_by_category,
     get_venues_by_district,
     get_all_venues,
     get_districts,
@@ -28,17 +28,18 @@ router = Router()
 
 class BookingStates(StatesGroup):
     waiting_phone = State()
-    choosing_mode = State()
+    choosing_mode = State()       # по категории / по району
     choosing_category = State()
     choosing_district = State()
     choosing_date = State()
     choosing_time = State()
     choosing_people = State()
     typing_comment = State()
-    choosing_venue = State()
+    choosing_venue = State()      # выбор конкретного заведения
 
 
 # ====== ВСПОМОГАТЕЛЬНЫЕ КЛАВИАТУРЫ ======
+
 
 def booking_mode_keyboard() -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(
@@ -60,44 +61,29 @@ def booking_mode_keyboard() -> InlineKeyboardMarkup:
 
 
 def categories_keyboard() -> InlineKeyboardMarkup:
-    """
-    Формируем клавиатуру категорий динамически из venues.json.
-    Убираем дубли типа 'Караоке' и 'караоке' (сравниваем без регистра),
-    но отображаем в том виде, как встретилось первым.
-    """
-    venues = get_all_venues()
-
-    # key = нижний регистр, value = "красивое" название
-    cat_map: dict[str, str] = {}
-
-    for v in venues:
-        cats_raw = v.get("category", "")
-        if not cats_raw:
-            continue
-
-        for c in cats_raw.split(","):
-            c_clean = c.strip()
-            if not c_clean:
-                continue
-
-            key = c_clean.lower()
-            if key not in cat_map:
-                cat_map[key] = c_clean   # запоминаем первую нормальную версию
-
-    buttons: list[list[InlineKeyboardButton]] = []
-
-    # сортируем по алфавиту без учёта регистра
-    for cat in sorted(cat_map.values(), key=str.lower):
-        buttons.append(
-            [InlineKeyboardButton(text=cat, callback_data=f"cat:{cat}")]
-        )
-
-    # в конце — отдельная кнопка "Все заведения"
-    buttons.append(
-        [InlineKeyboardButton(text="Все заведения", callback_data="cat:all")]
+    kb = InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Кафе/Рестораны",
+                    callback_data="cat:Кафе/Рестораны",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Караоке",
+                    callback_data="cat:Караоке",
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Боулинг",
+                    callback_data="cat:Боулинг",
+                )
+            ],
+        ]
     )
-
-    return InlineKeyboardMarkup(inline_keyboard=buttons)
+    return kb
 
 
 def districts_keyboard() -> InlineKeyboardMarkup:
@@ -209,7 +195,7 @@ def time_keyboard() -> InlineKeyboardMarkup:
                 callback_data=f"time:{t}",
             )
         )
-    rows = [buttons[i: i + 3] for i in range(0, len(buttons), 3)]
+    rows = [buttons[i : i + 3] for i in range(0, len(buttons), 3)]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
@@ -224,11 +210,12 @@ def people_keyboard() -> InlineKeyboardMarkup:
                 callback_data=f"people:{n}",
             )
         )
-    rows = [buttons[i: i + 3] for i in range(0, len(buttons), 3)]
+    rows = [buttons[i : i + 3] for i in range(0, len(buttons), 3)]
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 # ====== СТАРТ БРОНИ ======
+
 
 @router.message(F.text == "🔔 Забронировать")
 async def booking_start(message: types.Message, state: FSMContext):
@@ -252,6 +239,7 @@ async def booking_start(message: types.Message, state: FSMContext):
 
 
 # ====== ТЕЛЕФОН ======
+
 
 @router.message(BookingStates.waiting_phone, F.contact)
 async def phone_received(message: types.Message, state: FSMContext):
@@ -288,6 +276,7 @@ async def phone_waiting_wrong(message: types.Message, state: FSMContext):
 
 # ====== РЕЖИМ: КАТЕГОРИЯ / РАЙОН ======
 
+
 @router.callback_query(BookingStates.choosing_mode, F.data == "mode:category")
 async def mode_category(callback: types.CallbackQuery, state: FSMContext):
     await state.update_data(mode="category")
@@ -311,6 +300,7 @@ async def mode_district(callback: types.CallbackQuery, state: FSMContext):
 
 
 # ====== ВЫБОР КАТЕГОРИИ / РАЙОНА ======
+
 
 @router.callback_query(BookingStates.choosing_category, F.data.startswith("cat:"))
 async def category_chosen(callback: types.CallbackQuery, state: FSMContext):
@@ -343,6 +333,7 @@ async def district_chosen(callback: types.CallbackQuery, state: FSMContext):
 
 
 # ====== КАЛЕНДАРЬ ======
+
 
 @router.callback_query(BookingStates.choosing_date, F.data.startswith("cal:prev:"))
 async def calendar_prev(callback: types.CallbackQuery, state: FSMContext):
@@ -399,6 +390,7 @@ async def date_chosen(callback: types.CallbackQuery, state: FSMContext):
 
 # ====== ВРЕМЯ / ЛЮДИ / КОММЕНТ ======
 
+
 @router.callback_query(BookingStates.choosing_time, F.data.startswith("time:"))
 async def time_chosen(callback: types.CallbackQuery, state: FSMContext):
     time_str = callback.data.split(":", 1)[1]
@@ -439,28 +431,16 @@ async def comment_received(message: types.Message, state: FSMContext):
     category = data.get("category")
     district = data.get("district")
 
-    # сохраняем комментарий
+    # сохраняем коммент в состоянии
     await state.update_data(comment=comment)
 
     # подбираем заведения
-    venues: list[dict] = []
-
     if mode == "category" and category:
-        if category == "all":
-            venues = get_all_venues()
-        else:
-            # фильтруем по подкатегории (КЕЙС-ИНСЕНСИТИВНО)
-            all_venues = get_all_venues()
-            for v in all_venues:
-                cats_raw = v.get("category", "")
-                # разбиваем по запятой: "Ресто-бар, караоке, боулинг"
-                cats = [c.strip() for c in cats_raw.split(",") if c.strip()]
-                # сравниваем без учёта регистра
-                if any(category.lower() == c.lower() for c in cats):
-                    venues.append(v)
-
+        venues = get_venues_by_category(category)
     elif mode == "district" and district:
         venues = get_venues_by_district(district)
+    else:
+        venues = []
 
     if not venues:
         await message.answer(
@@ -471,7 +451,7 @@ async def comment_received(message: types.Message, state: FSMContext):
         await state.clear()
         return
 
-    # текст со списком
+    # показываем список и просим выбрать конкретное заведение
     venues_text_parts = []
     for i, v in enumerate(venues, start=1):
         part = (
@@ -499,6 +479,7 @@ async def comment_received(message: types.Message, state: FSMContext):
 
 # ====== ВЫБОР КОНКРЕТНОГО ЗАВЕДЕНИЯ ======
 
+
 @router.callback_query(BookingStates.choosing_venue, F.data.startswith("venue:"))
 async def venue_chosen(callback: types.CallbackQuery, state: FSMContext):
     venue_id = int(callback.data.split(":", 1)[1])
@@ -519,14 +500,10 @@ async def venue_chosen(callback: types.CallbackQuery, state: FSMContext):
     date_obj = date.fromisoformat(date_iso)
     date_human = date_obj.strftime("%d.%m.%Y")
 
-    # строка про фильтр
+    # строка фильтра
     if mode == "category" and category:
-        if category == "all":
-            filter_line = "• Тип заведения: <b>Любой</b>\n"
-            booking_category = "Все заведения"
-        else:
-            filter_line = f"• Тип заведения: <b>{category}</b>\n"
-            booking_category = category
+        filter_line = f"• Тип заведения: <b>{category}</b>\n"
+        booking_category = category
     elif mode == "district" and district:
         filter_line = f"• Район: <b>{district}</b>\n"
         booking_category = f"Район: {district}"
@@ -581,7 +558,8 @@ async def venue_chosen(callback: types.CallbackQuery, state: FSMContext):
         await callback.message.bot.send_message(settings.admin_id, admin_text)
 
 
-# ====== «ВСЕ ЗАВЕДЕНИЯ» (кнопка из главного меню) ======
+# ====== «ВСЕ ЗАВЕДЕНИЯ» ======
+
 
 @router.message(F.text == "📍 Все заведения")
 async def all_venues_handler(message: types.Message):
