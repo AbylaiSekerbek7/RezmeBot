@@ -87,6 +87,9 @@ Users select a category or area, choose date/time/people count, add a comment, a
 
 <img width="1436" height="1029" alt="image" src="https://github.com/user-attachments/assets/7e2e28d0-8f3b-4476-971d-2aaf01d456b6" />
 
+# All functions
+
+<img width="1431" height="984" alt="image" src="https://github.com/user-attachments/assets/fe3394d1-dda1-41cf-aca3-f8b746e2caa2" />
 
 
 
